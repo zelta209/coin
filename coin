@@ -1,0 +1,185 @@
+solidez del pragma ^ 0 . 4 . 24 ;
+
+// ------------------------------------------------ ----------------------------
+// Ejemplo de contrato de token
+//
+// Símbolo: {{META}}
+// Nombre: {{META}}1000000000000000000000000}}
+// Decimales: {{18}}
+// Cuenta de propietario: {{0xc3B35a35424f43199D3Af7e96510B7A110Ad04BD}}
+//
+// Disfrutar.
+//
+// (c) por Juan Cruz Martinez 2020. Licencia MIT.
+// ------------------------------------------------ ----------------------------
+
+
+// ------------------------------------------------ ----------------------------
+// Lib: Matemáticas seguras
+// ------------------------------------------------ ----------------------------
+contract SafeMath {
+
+    función safeAdd ( uint  a , uint  b ) devoluciones puras públicas  ( uint c ) {  
+        c = a + b;
+        requieren (c > = a);
+    }
+
+    función safeSub ( uint  a , uint  b ) public  pure  returns ( uint  c ) {
+        require (b <= a);
+        c = a - b;
+    }
+
+    función safeMul ( uint  a , uint  b ) public  pure  returns ( uint  c ) {
+        c = a * b;
+        require (a ==  0  || c / a == b);
+    }
+
+    función safeDiv ( uint  a , uint  b ) public  pure  returns ( uint  c ) {
+        requieren (b >  0 );
+        c = a / b;
+    }
+}
+
+
+/ **
+Interfaz ERC Token Standard # 20
+https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md
+* /
+contract ERC20Interface {
+    function totalSupply () devoluciones constantes públicas  ( uint ); 
+    función balanceOf ( dirección  tokenOwner ) rendimientos constantes públicos  ( saldo uint );  
+    función de asignación ( dirección  tokenOwner , dirección que  gasta ) rendimientos constantes públicos  ( uint restante );  
+    transferencia de función ( dirección  a , tokens uint  ) devoluciones públicas ( éxito de bool );  
+    función aprobar ( gastador de direcciones  , tokens uint ) devoluciones públicas ( éxito de bool );   
+    función transferFrom ( dirección  desde , dirección  a , tokens uint  ) devoluciones públicas ( éxito de bool );  
+
+    Transferencia de eventos ( dirección  indexada  desde , dirección  indexada  a , tokens uint  );
+    evento Approval ( dirección de  indexado  tokenOwner , dirección  indexada  Spender , uint  tokens );
+}
+
+
+/ **
+Función de contrato para recibir aprobación y ejecutar la función en una llamada
+Tomado prestado de MiniMeToken
+* /
+contrato ApproveAndCallFallBack {
+    función ReceiveApproval ( dirección  de , tokens uint256  , token de dirección , bytes de datos ) público ;  
+}
+
+/ **
+Token ERC20, con la adición de símbolo, nombre y decimales y transferencias de token asistidas
+* /
+contrato {{META}} El token es ERC20Interface, SafeMath {
+     símbolo público de cadena ;
+    cadena de    nombre público ;
+    uint8  decimales públicos ;
+    uint  public _totalSupply;
+
+    mapeo ( dirección => uint ) saldos;
+    mapeo ( dirección => mapeo (dirección => uint) ) permitido;
+
+
+    // ------------------------------------------------ ------------------------
+    // Constructor
+    // ------------------------------------------------ ------------------------
+    constructor () public {
+        symbol =  "{{META}}" ;
+        name =  "{{META}}" ;
+        decimales = {{18}};
+        _totalSupply = {{1000000000000000000000000}};
+        saldos [{{0xc3B35a35424f43199D3Af7e96510B7A110Ad04BD}}] = _totalSupply;
+        emitir  Transferencia ( dirección ( 0 ), {{0xc3B35a35424f43199D3Af7e96510B7A110Ad04BD}}, _totalSupply);
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // Oferta total
+    // ------------------------------------------------ ------------------------
+    function totalSupply () devoluciones constantes públicas  ( uint ) { 
+        return _totalSupply   - saldos [ dirección ( 0 )];
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // Obtenga el saldo del token para la cuenta tokenOwner
+    // ------------------------------------------------ ------------------------
+    function balanceOf ( dirección  tokenOwner ) devoluciones constantes públicas  ( saldo uint ) {  
+        devolver saldos [tokenOwner];
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // Transferir el saldo de la cuenta del propietario del token a la cuenta
+    // - La cuenta del propietario debe tener saldo suficiente para transferir
+    // - Se permiten transferencias de valor 0
+    // ------------------------------------------------ ------------------------
+    transferencia de función ( dirección  a , tokens uint  ) devoluciones públicas ( éxito de bool ) {  
+        saldos [ msg . remitente ] =  safeSub (saldos [ msg . remitente ], tokens);
+        saldos [hasta] =  safeAdd (saldos [hasta], tokens);
+        Emit  Transfer ( msg . remitente , a, tokens);
+        devuelve  verdadero ;
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // El propietario del token puede aprobar que el gastador transfiera tokens de (...)
+    // de la cuenta del propietario del token
+    //
+    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md
+    // recomienda que no haya comprobaciones para el ataque de doble gasto de aprobación
+    // ya que esto debería implementarse en las interfaces de usuario 
+    // ------------------------------------------------ ------------------------
+    función aprobar ( gastador de direcciones  , tokens de uint ) devoluciones públicas ( éxito de bool ) {   
+        permitido [ msg . remitente ] [gastador] = tokens;
+        emitir  aprobación ( msg . remitente , gastador, tokens);
+        devuelve  verdadero ;
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // Transferir tokens de la cuenta de origen a la cuenta de destino
+    // 
+    // La cuenta de llamada ya debe tener suficientes tokens aprobar (...) - d
+    // para gastos de la cuenta de remitente y
+    // - De la cuenta debe tener saldo suficiente para transferir
+    // - El gastador debe tener suficiente margen para transferir
+    // - Se permiten transferencias de valor 0
+    // ------------------------------------------------ ------------------------
+    función transferFrom ( dirección  desde , dirección  a , tokens uint  ) devoluciones públicas ( éxito de bool ) {  
+        saldos [desde] =  safeSub (saldos [desde], tokens);
+        permitido [desde] [ msg . remitente ] =  safeSub (permitido [de] [ msg . remitente ], tokens);
+        saldos [hasta] =  safeAdd (saldos [hasta], tokens);
+        emitir  Transferencia (desde, hasta, tokens);
+        devuelve  verdadero ;
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // Devuelve la cantidad de tokens aprobados por el propietario que se pueden
+    // transferido a la cuenta del gastador
+    // ------------------------------------------------ ------------------------
+    asignación de función ( dirección  tokenOwner , dirección que  gasta ) rendimientos constantes públicos  ( uint restante ) {  
+        retorno permitido [tokenOwner] [gastador];
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // El propietario del token puede aprobar que el gastador transfiera tokens de (...)
+    // de la cuenta del propietario del token. La función de contrato de gastador
+    // Luego se ejecuta ReceiveApproval (...)
+    // ------------------------------------------------ ------------------------
+    función aprobarAndCall ( gastador de direcciones  , tokens de uint , datos de bytes ) devoluciones públicas ( éxito de bool ) {    
+        permitido [ msg . remitente ] [gastador] = tokens;
+        emitir  aprobación ( msg . remitente , gastador, tokens);
+        ApproveAndCallFallBack (gastador). recibirAprobación ( msg . remitente , tokens, esto , datos);
+        devuelve  verdadero ;
+    }
+
+
+    // ------------------------------------------------ ------------------------
+    // No aceptes ETH
+    // ------------------------------------------------ ------------------------
+    función () pago público  {
+        revertir ();
+    }
+}
